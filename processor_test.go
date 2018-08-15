@@ -13,7 +13,7 @@ func TestProcessorFunction(t *testing.T) {
 		t.Errorf("Error on config: %v", config.err)
 	}
 
-	job := newRequest("test")
+	job := newRequest("google")
 
 	jobJSON := serializeOrFail(job)
 

@@ -24,10 +24,59 @@ func saveJob(req *SentimentRequest) error {
 	_, err := config.db.Apply(ctx, []*spanner.Mutation{m})
 
 	if err != nil {
-		log.Fatalf("Error on DB write: %v", err)
+		log.Fatalf("Error on job save: %v", err)
 	}
 
 	log.Printf("Saved Job:%s Term:%s ", req.ID, req.Term)
+
+	return err
+
+}
+
+func saveResults(req *SentimentRequest) error {
+
+	if config.db == nil {
+		log.Fatal("DB not configured in saveJobs")
+	}
+
+	if req == nil {
+		return errors.New("Nil parameter")
+	}
+
+	m := spanner.InsertOrUpdate("results",
+		[]string{"id", "processed_on", "tweets", "positive", "negative", "score"},
+		[]interface{}{req.ID, req.Result.Processed, req.Result.Tweets,
+			req.Result.Positive, req.Result.Negative, req.Result.Score})
+
+	_, err := config.db.Apply(ctx, []*spanner.Mutation{m})
+
+	if err != nil {
+		log.Fatalf("Error on result write: %v", err)
+	}
+
+	log.Printf("Saved Job Result:%s Score:%v", req.ID, req.Result.Score)
+
+	return err
+
+}
+
+func updateJobStatus(id, status string) error {
+
+	if config.db == nil {
+		log.Fatal("DB not configured in saveJobs")
+	}
+
+	m := spanner.InsertOrUpdate("jobs",
+		[]string{"id", "status"},
+		[]interface{}{id, status})
+
+	_, err := config.db.Apply(ctx, []*spanner.Mutation{m})
+
+	if err != nil {
+		log.Fatalf("Error on DB update: %v", err)
+	}
+
+	log.Printf("Updated Job:%s Status:%s ", id, status)
 
 	return err
 

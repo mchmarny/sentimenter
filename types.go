@@ -1,7 +1,6 @@
 package sentimenter
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -9,10 +8,11 @@ import (
 type RequestStatus int
 
 const (
-	jobStatusDefault   string = "Default"
-	jobStatusReceived  string = "Received"
-	jobStatusProcessed string = "Processed"
-	jobStatusFailed    string = "Failed"
+	jobStatusDefault    string = "Default"
+	jobStatusReceived   string = "Received"
+	jobStatusProcessing string = "Processing"
+	jobStatusProcessed  string = "Processed"
+	jobStatusFailed     string = "Failed"
 )
 
 func newRequest(term string) *SentimentRequest {
@@ -26,15 +26,19 @@ func newRequest(term string) *SentimentRequest {
 
 // SentimentRequest represents the sentiment request job
 type SentimentRequest struct {
-	ID     string    `json:"id"`
-	On     time.Time `json:"created_on"`
-	Term   string    `json:"search_term"`
-	Status string    `json:"status"`
+	ID     string           `json:"id"`
+	On     time.Time        `json:"created_on"`
+	Term   string           `json:"search_term"`
+	Status string           `json:"status"`
+	Result *SentimentResult `json:"result"`
 }
 
-func (r *SentimentRequest) String() string {
-	return fmt.Sprintf("ID:%s, On:%s, Term:%s. Status:%s", r.ID, r.On, r.Term, r.Status)
-
+type SentimentResult struct {
+	Processed time.Time `json:"processed_on"`
+	Tweets    int       `json:"tweets"`
+	Positive  int       `json:"positive"`
+	Negative  int       `json:"negative"`
+	Score     float64   `json:"score"`
 }
 
 // PubSubMessage represents PubSub payload

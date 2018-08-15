@@ -8,12 +8,19 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	lang "cloud.google.com/go/language/apiv1"
 	"github.com/dghubble/go-twitter/twitter"
 	"github.com/dghubble/oauth1"
 
 	langpb "google.golang.org/genproto/googleapis/cloud/language/v1"
+)
+
+const (
+	magnitudeThreshold     = 0.5
+	positiveScoreThreshold = 0.5
+	negativeScoreThreshold = -0.5
 )
 
 var (
@@ -23,15 +30,15 @@ var (
 // ProcessorFunction processes pubsub messages
 func ProcessorFunction(ctx context.Context, m PubSubMessage) error {
 
-	config.once.Do(func() { configFunc() })
 	config.once.Do(func() {
-		{
-			client, err := lang.NewClient(ctx)
-			if err != nil {
-				log.Panicf("Failed to create client: %v", err)
-			}
-			langClient = client
+		configFunc()
+
+		client, err := lang.NewClient(ctx)
+		if err != nil {
+			log.Panicf("Failed to create client: %v", err)
 		}
+		langClient = client
+
 	})
 
 	if config.Error() != nil {
@@ -47,8 +54,33 @@ func ProcessorFunction(ctx context.Context, m PubSubMessage) error {
 	}
 
 	log.Printf("Processing job: %s", job.ID)
+	err = updateJobStatus(job.ID, jobStatusProcessing)
 
-	//TODO: implement
+	if err != nil {
+		log.Panicf("Error updating job status: %v", err)
+		updateJobStatus(job.ID, jobStatusFailed)
+	}
+
+	sent, err := processTerm(job.Term)
+	if err != nil {
+		log.Println(err)
+		updateJobStatus(job.ID, jobStatusFailed)
+		return err
+	}
+
+	// update job
+	job.Result = sent
+
+	// save results
+	err = saveResults(job)
+	if err != nil {
+		log.Println(err)
+		updateJobStatus(job.ID, jobStatusFailed)
+		return err
+	}
+
+	// save job status
+	updateJobStatus(job.ID, jobStatusProcessed)
 
 	return nil
 
@@ -79,7 +111,7 @@ func pubSubPayloadToJob(m *PubSubMessage) (job *SentimentRequest, err error) {
 
 }
 
-func getTweets(query string) error {
+func processTerm(query string) (r *SentimentResult, err error) {
 
 	consumerKey := os.Getenv("T_CONSUMER_KEY")
 	consumerSecret := os.Getenv("T_CONSUMER_SECRET")
@@ -87,7 +119,7 @@ func getTweets(query string) error {
 	accessSecret := os.Getenv("T_ACCESS_SECRET")
 
 	if consumerKey == "" || consumerSecret == "" || accessToken == "" || accessSecret == "" {
-		return errors.New("Both, consumer key/secret and access token/secret are required")
+		return nil, errors.New("Both, consumer key/secret and access token/secret are required")
 	}
 
 	// init convif
@@ -112,35 +144,67 @@ func getTweets(query string) error {
 	log.Printf("Search: %v\n", query)
 	search, _, err := client.Search.Tweets(searchArgs)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// counter stuff
-	log.Printf("Found: %d", len(search.Statuses))
+	// results
+	result := &SentimentResult{
+		Tweets:    len(search.Statuses),
+		Processed: time.Now(),
+	}
+
+	log.Printf("Found: %d", result.Tweets)
 
 	for _, tweet := range search.Statuses {
 
 		log.Printf("ID:%v", tweet.ID)
 
-		text := strings.TrimSuffix(tweet.FullText, "\n")
-		log.Printf("Text:%s", text)
+		txt := strings.TrimSuffix(tweet.Text, "\n")
+		log.Printf("Text:%s", txt)
 
-		sentiment, err := scoreSentiment(text)
+		sentiment, err := scoreSentiment(txt)
 
 		if err != nil {
 			log.Printf("Error while scoring: %v", err)
-			return err
+			return nil, err
 		}
 
 		//.Score, result.DocumentSentiment.Magnitude, nil
 		log.Printf("Sentiment: %v", sentiment)
 
+		if sentiment.Score < negativeScoreThreshold && sentiment.Magnitude > magnitudeThreshold {
+			result.Negative++
+		}
+
+		if sentiment.Score > positiveScoreThreshold && sentiment.Magnitude > magnitudeThreshold {
+			result.Positive++
+		}
+
+		result.Score += float64(sentiment.Score * sentiment.Magnitude)
+
 	}
 
-	return nil
+	return result, nil
 
 }
 
+/*
+
+score of the sentiment ranges between -1.0 (negative) and 1.0 (positive)
+and corresponds to the overall emotional leaning of the text.
+
+magnitude indicates the overall strength of emotion (both positive and negative)
+within the given text, between 0.0 and +inf. Unlike score, magnitude is not
+normalized; each expression of emotion within the text (both positive and
+negative) contributes to the text's magnitude (so longer text blocks may have
+greater magnitudes).
+
+Clearly Positive*	"score": 0.8, 	"magnitude": 3.0
+Clearly Negative*	"score": -0.6, 	"magnitude": 4.0
+Neutral				"score": 0.1, 	"magnitude": 0.0
+Mixed				"score": 0.0, 	"magnitude": 4.0
+
+*/
 func scoreSentiment(s string) (sentiment *langpb.Sentiment, err error) {
 
 	result, err := langClient.AnalyzeSentiment(ctx, &langpb.AnalyzeSentimentRequest{

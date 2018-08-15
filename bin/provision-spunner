@@ -15,3 +15,8 @@ gcloud spanner databases create "db" --instance="sentimenter"
 echo "Creating jobs table..."
 gcloud spanner databases ddl update "db" --instance="sentimenter" \
     --ddl='CREATE TABLE jobs (id STRING(MAX), search_term STRING(MAX), created_on TIMESTAMP, status STRING(MAX)) PRIMARY KEY (id)'
+
+echo "Creating results table..."
+gcloud spanner databases ddl update "db" --instance="sentimenter" \
+    --ddl='CREATE TABLE results (id STRING(MAX), processed_on TIMESTAMP, tweets INT64, positive INT64, negative INT64, score FLOAT64) PRIMARY KEY (id)'
+

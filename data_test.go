@@ -27,4 +27,10 @@ func TestJobData(t *testing.T) {
 	if req.ID != termReq.ID {
 		t.Errorf("Got invalid job: %v", req)
 	}
+
+	err = updateJobStatus(req.ID, jobStatusProcessing)
+
+	if err != nil {
+		t.Errorf("Error updating job status: %v", req)
+	}
 }
