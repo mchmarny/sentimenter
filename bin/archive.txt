@@ -1,0 +1,52 @@
+#!/bin/bash
+
+DIR="$(dirname "$0")"
+. "${DIR}/config.sh"
+
+echo "Creating topics..."
+gcloud beta pubsub topics create $G_TOPIC
+echo "Creating subscriptions..."
+gcloud beta pubsub subscriptions create $G_TOPIC_SUB \
+  --topic=$G_TOPIC
+
+
+echo "Creating BigQuery tables..."
+bq mk $A_NAME
+bq mk $G_TABLE
+bq query --use_legacy_sql=false "
+  CREATE OR REPLACE TABLE ${G_TABLE} (
+    id STRING NOT NULL,
+    query STRING NOT NULL,
+    content STRUCT<
+      t_id STRING NOT NULL,
+      t_on TIMESTAMP NOT NULL,
+      t_by STRING NOT NULL,
+      t_name STRING NOT NULL,
+      t_url STRING NOT NULL,
+      t_text STRING NOT NULL,
+      t_raw STRING NOT NULL
+    > NOT NULL,
+    sentiment STRUCT<
+      s_score FLOAT64 NOT NULL,
+      s_mag FLOAT64 NOT NULL
+    > NOT NULL
+)"
+
+echo "Creating dataflow job..."
+gcloud beta dataflow jobs run $G_JOB \
+  --gcs-location gs://dataflow-templates/pubsub-to-bigquery/template_file \
+  --parameters="topic=projects/${G_PROJECT}/topics/${G_TOPIC}","table=${G_PROJECT}:${G_TABLE}"
+
+
+echo "Creating spanner instance..."
+gcloud beta spanner instances create $A_NAME \
+  --config=regional-us-west1 \
+  --description="${A_NAME} DB" \
+  --nodes=1
+
+echo "Creating spanner db..."
+gcloud spanner databases create $G_DB --instance=$A_NAME
+
+echo "Set spanner db schema..."
+gcloud spanner databases ddl update $G_DB --instance=$A_NAME \
+    --ddl='CREATE TABLE config ( query STRING(MAX), last_id INT64 ) PRIMARY KEY (query)'

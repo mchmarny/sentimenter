@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "Local tests will time out right now due to Cloud Memstore local IP"
+go test .

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+ENV_VARS="TOPIC_NAME=sentimenter,DB_PATH=projects/s9-demo/instances/sentimenter/databases/db"
+
+gcloud alpha functions deploy sentimenter-submitter \
+  --entry-point SubmitFunction \
+  --set-env-vars $ENV_VARS \
+  --memory 128MB \
+  --region us-central1 \
+  --runtime go111 \
+  --trigger-http
+
+
+gcloud alpha functions deploy sentimenter-status \
+  --entry-point ReportFunction \
+  --set-env-vars $ENV_VARS \
+  --memory 128MB \
+  --region us-central1 \
+  --runtime go111 \
+  --trigger-http
