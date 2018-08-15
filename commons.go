@@ -2,6 +2,7 @@ package sentimenter
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -93,4 +94,12 @@ func getDefaultConfig() error {
 
 func getNewID() string {
 	return uuid.NewV4().String()
+}
+
+func serializeOrFail(o interface{}) []byte {
+	b, err := json.Marshal(o)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return b
 }

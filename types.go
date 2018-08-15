@@ -1,9 +1,7 @@
 package sentimenter
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 )
 
@@ -39,10 +37,7 @@ func (r *SentimentRequest) String() string {
 
 }
 
-func serializeOrFail(o interface{}) []byte {
-	b, err := json.Marshal(o)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return b
+// PubSubMessage represents PubSub payload
+type PubSubMessage struct {
+	Data string `json:"data"`
 }
