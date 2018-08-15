@@ -6,7 +6,9 @@ Example of long running process leveraging GCF and multiple back-end services (S
 ## Submit Job
 
 ```
-curl https://$(SERVICE_HOST}/sentimenter-submitter?term=google
+HTTPS_TRIGGER_URL=$(gcloud alpha functions describe sentimenter-submitter \
+  --format='value(httpsTrigger.url)')
+curl https://$(HTTPS_TRIGGER_URL}/sentimenter-submitter?term=google
 ```
 
 Result
@@ -24,7 +26,9 @@ Result
 ## Check Job Status
 
 ```
-curl https://$(SERVICE_HOST}/sentimenter-status?id=c24774a1-89df-4ec0-a962-121a36d6966c
+HTTPS_TRIGGER_URL=$(gcloud alpha functions describe sentimenter-status \
+  --format='value(httpsTrigger.url)')
+curl https://$(HTTPS_TRIGGER_URL}/sentimenter-status?id=c24774a1-89df-4ec0-a962-121a36d6966c
 ```
 
 Result
@@ -44,7 +48,9 @@ Result
 ## Get Job Results
 
 ```
-curl https://$(SERVICE_HOST}/sentimenter-result?id=c24774a1-89df-4ec0-a962-121a36d6966c
+HTTPS_TRIGGER_URL=$(gcloud alpha functions describe sentimenter-result \
+  --format='value(httpsTrigger.url)')
+curl https://$(HTTPS_TRIGGER_URL}/sentimenter-result?id=c24774a1-89df-4ec0-a962-121a36d6966c
 ```
 
 Result
