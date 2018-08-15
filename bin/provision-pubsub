@@ -2,6 +2,3 @@
 
 echo "Creating topics..."
 gcloud beta pubsub topics create "sentimenter-requests"
-
-echo "Creating subscriptions..."
-gcloud beta pubsub subscriptions create "sentimenter-requests-processor" --topic="sentimenter-requests"
