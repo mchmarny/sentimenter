@@ -1,6 +1,9 @@
 package sentimenter
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestJobData(t *testing.T) {
 
@@ -31,6 +34,20 @@ func TestJobData(t *testing.T) {
 	err = updateJobStatus(req.ID, jobStatusProcessing)
 
 	if err != nil {
-		t.Errorf("Error updating job status: %v", req)
+		t.Errorf("Error updating job status: %v", err)
+	}
+
+	req.Result = &SentimentResult{
+		Tweets:    1,
+		Processed: time.Now(),
+		Positive:  2,
+		Negative:  3,
+		Score:     4.5,
+	}
+
+	err = saveResults(req)
+
+	if err != nil {
+		t.Errorf("Error saving results: %v", err)
 	}
 }

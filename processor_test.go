@@ -23,6 +23,8 @@ func TestProcessorFunction(t *testing.T) {
 		Data: jobEncoded,
 	}
 
+	maxTweets = 1
+
 	err := ProcessorFunction(ctx, msg)
 
 	if err != nil {

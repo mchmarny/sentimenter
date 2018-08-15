@@ -106,3 +106,29 @@ func getJob(id string) (req *SentimentRequest, err error) {
 	return result, err
 
 }
+
+func getResult(id string) (r *SentimentResult, err error) {
+
+	if config.db == nil {
+		log.Fatal("DB not configured")
+	}
+
+	if id == "" {
+		return nil, errors.New("Nil parameter")
+	}
+
+	var result = &SentimentResult{}
+	row, err := config.db.Single().ReadRow(ctx, "results", spanner.Key{id},
+		[]string{"processed_on", "tweets", "positive", "negative", "score"})
+
+	if err != nil {
+		log.Println(err)
+		return result, err
+	}
+
+	err = row.Columns(&result.Processed, &result.Tweets,
+		&result.Positive, &result.Negative, &result.Score)
+
+	return result, err
+
+}

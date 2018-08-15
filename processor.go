@@ -25,6 +25,7 @@ const (
 
 var (
 	langClient *lang.Client
+	maxTweets  = 100
 )
 
 // ProcessorFunction processes pubsub messages
@@ -35,7 +36,8 @@ func ProcessorFunction(ctx context.Context, m PubSubMessage) error {
 
 		client, err := lang.NewClient(ctx)
 		if err != nil {
-			log.Panicf("Failed to create client: %v", err)
+			log.Printf("Failed to create client: %v", err)
+			config.err = err
 		}
 		langClient = client
 
@@ -55,9 +57,8 @@ func ProcessorFunction(ctx context.Context, m PubSubMessage) error {
 
 	log.Printf("Processing job: %s", job.ID)
 	err = updateJobStatus(job.ID, jobStatusProcessing)
-
 	if err != nil {
-		log.Panicf("Error updating job status: %v", err)
+		log.Printf("Error updating job status: %v", err)
 		updateJobStatus(job.ID, jobStatusFailed)
 	}
 
@@ -80,7 +81,11 @@ func ProcessorFunction(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// save job status
-	updateJobStatus(job.ID, jobStatusProcessed)
+	err = updateJobStatus(job.ID, jobStatusProcessed)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
 
 	return nil
 
@@ -134,7 +139,7 @@ func processTerm(query string) (r *SentimentResult, err error) {
 
 	searchArgs := &twitter.SearchTweetParams{
 		Query:   query,
-		Count:   100,
+		Count:   maxTweets,
 		Lang:    "en",
 		SinceID: maxTweetID,
 		//MaxID:      maxTweetID,
@@ -189,21 +194,10 @@ func processTerm(query string) (r *SentimentResult, err error) {
 }
 
 /*
-
-score of the sentiment ranges between -1.0 (negative) and 1.0 (positive)
-and corresponds to the overall emotional leaning of the text.
-
-magnitude indicates the overall strength of emotion (both positive and negative)
-within the given text, between 0.0 and +inf. Unlike score, magnitude is not
-normalized; each expression of emotion within the text (both positive and
-negative) contributes to the text's magnitude (so longer text blocks may have
-greater magnitudes).
-
 Clearly Positive*	"score": 0.8, 	"magnitude": 3.0
 Clearly Negative*	"score": -0.6, 	"magnitude": 4.0
 Neutral				"score": 0.1, 	"magnitude": 0.0
 Mixed				"score": 0.0, 	"magnitude": 4.0
-
 */
 func scoreSentiment(s string) (sentiment *langpb.Sentiment, err error) {
 

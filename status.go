@@ -5,8 +5,8 @@ import (
 	"net/http"
 )
 
-// ReportFunction represents the job status checker functionality
-func ReportFunction(w http.ResponseWriter, r *http.Request) {
+// StatusFunction represents the job status checker functionality
+func StatusFunction(w http.ResponseWriter, r *http.Request) {
 
 	config.once.Do(func() { configFunc() })
 
@@ -37,6 +37,16 @@ func ReportFunction(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Job not found: %s", id)
 		http.Error(w, "Job not found", http.StatusInternalServerError)
 		return
+	}
+
+	if job.Status == jobStatusProcessed {
+		rez, err := getResult(job.ID)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		job.Result = rez
 	}
 
 	w.Header().Set("Content-Type", "application/json")

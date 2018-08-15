@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestReportFunction(t *testing.T) {
+func TestStatusFunction(t *testing.T) {
 
 	// Save a DB
 	configFunc()
@@ -27,7 +27,7 @@ func TestReportFunction(t *testing.T) {
 	}
 
 	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(ReportFunction)
+	handler := http.HandlerFunc(StatusFunction)
 	handler.ServeHTTP(rr, req)
 
 	if status := rr.Code; status != http.StatusOK {
