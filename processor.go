@@ -11,6 +11,7 @@ import (
 	"time"
 
 	lang "cloud.google.com/go/language/apiv1"
+	"cloud.google.com/go/logging"
 	"github.com/dghubble/go-twitter/twitter"
 	"github.com/dghubble/oauth1"
 
@@ -43,8 +44,11 @@ func ProcessorFunction(ctx context.Context, m PubSubMessage) error {
 
 	})
 
+	defer logger.Flush()
+
 	if config.Error() != nil {
 		log.Println(config.Error())
+		logger.StandardLogger(logging.Error).Println(config.Error())
 		return config.Error()
 	}
 
@@ -56,15 +60,18 @@ func ProcessorFunction(ctx context.Context, m PubSubMessage) error {
 	}
 
 	log.Printf("Processing job: %s", job.ID)
+	logger.StandardLogger(logging.Info).Printf("Processing job: %s", job.ID)
 	err = updateJobStatus(job.ID, jobStatusProcessing)
 	if err != nil {
 		log.Printf("Error updating job status: %v", err)
+		logger.StandardLogger(logging.Error).Println(err)
 		return err
 	}
 
 	sent, err := processTerm(job.Term)
 	if err != nil {
 		log.Printf("Error updating job status: %v", err)
+		logger.StandardLogger(logging.Error).Println(err)
 		updateJobStatus(job.ID, jobStatusFailed)
 		return err
 	}
@@ -76,6 +83,7 @@ func ProcessorFunction(ctx context.Context, m PubSubMessage) error {
 	err = saveResults(job)
 	if err != nil {
 		log.Println(err)
+		logger.StandardLogger(logging.Error).Println(err)
 		updateJobStatus(job.ID, jobStatusFailed)
 		return err
 	}
@@ -84,6 +92,7 @@ func ProcessorFunction(ctx context.Context, m PubSubMessage) error {
 	err = updateJobStatus(job.ID, jobStatusProcessed)
 	if err != nil {
 		log.Println(err)
+		logger.StandardLogger(logging.Error).Println(err)
 		return err
 	}
 

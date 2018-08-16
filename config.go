@@ -9,6 +9,8 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/spanner"
+
+	"cloud.google.com/go/logging"
 )
 
 func init() {
@@ -21,6 +23,7 @@ func init() {
 var (
 	config *configuration
 	ctx    context.Context
+	logger *logging.Logger
 )
 
 // configFunc sets the global configuration; it's overridden in tests.
@@ -55,6 +58,14 @@ func getDefaultConfig() error {
 		config.err = &envError{"GCP_PROJECT"}
 		return config.err
 	}
+
+	loggingClient, err := logging.NewClient(ctx, projectID)
+	if err != nil {
+		config.err = err
+		return config.err
+	}
+
+	logger = loggingClient.Logger("sentimenter")
 
 	topicName := os.Getenv("TOPIC_NAME")
 	if topicName == "" {
