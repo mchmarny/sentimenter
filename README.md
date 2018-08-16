@@ -6,7 +6,9 @@ Example of multi-step process leveraging GCF and multiple back-end services:
 * [Pub/Sub](https://cloud.google.com/pubsub/) - Ingest event streams at any scale from anywhere for real-time streaming
 * [Google Cloud Natural Language API](https://cloud.google.com/natural-language/) - Derive insights from unstructured text using Google ML
 
-The `sentimenter` solutions allows the user to query for public sentiment from the last `100` tweets for any submitted term. 
+The `sentimenter` solutions allows the user to query for public sentiment from the last `100` tweets for any submitted term.
+
+![overview](img/overview.png)
 
 ## Usage
 
@@ -65,7 +67,7 @@ Result
 }
 ```
 
-> Note, while the positive or negative classification of each tweet is reliable, the overall score of the sentiment for all tweets is derived by combining sentiment with the magnitude of each tweet which tends to favour longer tweets. As a result, the score is only a relative indicator of the overall strength of the sentiment and probably meaningless in itself. 
+> Note, while the positive or negative classification of each tweet is reliable, the overall score of the sentiment for all tweets is derived by combining sentiment with the magnitude of each tweet which tends to favour longer tweets. As a result, the score is only a relative indicator of the overall strength of the sentiment and probably meaningless in itself.
 
 
 ## Setup
