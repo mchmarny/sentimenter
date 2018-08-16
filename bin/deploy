@@ -25,7 +25,7 @@ gcloud alpha functions deploy sentimenter-status \
 gcloud alpha functions deploy sentimenter-processor \
   --entry-point ProcessorFunction \
   --set-env-vars $PROCESS_ENV_VARS \
-  --memory 128MB \
+  --memory 256MB \
   --region us-central1 \
   --runtime go111 \
   --trigger-topic=sentimenter \
