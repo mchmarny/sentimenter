@@ -6,7 +6,7 @@ Example of multi-step process leveraging GCF and multiple back-end services:
 * [Pub/Sub](https://cloud.google.com/pubsub/) - Ingest event streams at any scale from anywhere for real-time streaming
 * [Google Cloud Natural Language API](https://cloud.google.com/natural-language/) - Derive insights from unstructured text using Google ML
 
-The `sentimenter` solutions allows the user get the sentiment report from the last `100` tweets for submitted term. The solution includes:
+The `sentimenter` solutions allows the user to query for public sentiment from the last `100` tweets for any submitted term. 
 
 ## Usage
 
@@ -34,7 +34,7 @@ Returns
 
 ### Job Processing (Background)
 
-The `processor` function will be automatically triggered by GCF when a new job arrives on Pub/Sub topic. The processor will change the state of that `job` to `Processing`, retrieve last `100` tweets using Twitter API, and score each tweet's sentiment using Google's Natural Language API. When done, the score of that job will be saved in the Spanner DB and the job status updated to `Processed`.
+The `processor` function will be automatically triggered by GCF when a new job arrives on Pub/Sub topic. The processor will change the state of that `job` to `Processing`, retrieve tweets using Twitter API, and score each tweet's sentiment using Google's Natural Language API. When done, the score of that job will be saved in the Spanner DB and the job status will be updated to `Processed`.
 
 
 ### Job Status
@@ -65,7 +65,7 @@ Result
 }
 ```
 
-> None of the Cloud Functions in this example know about each other. They only interaction point between the, is the state persisted in the Spanner DB and the payloads on the Pub/Sub queue
+> Note, while the positive or negative classification of each tweet is reliable, the overall score of the sentiment for all tweets is derived by combining sentiment with the magnitude of each tweet which tends to favour longer tweets. As a result, the score is only a relative indicator of the overall strength of the sentiment and probably meaningless in itself. 
 
 
 ## Setup
