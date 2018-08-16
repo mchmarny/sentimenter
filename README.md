@@ -8,12 +8,13 @@ Example of multi-step process leveraging GCF and multiple back-end services:
 
 The `sentimenter` solutions allows the user get the sentiment report from the last `100` tweets for submitted term. The solution includes:
 
+## Usage
 
-## Term Submission
+### Term Submission
 
 The `submitter` function which the user can invoke over HTTPS with their search `term` will create a `job`, save it with `Received` state in Spanner DB, and queue that job for processing in Pub/Sub topic.
 
-```
+```shell
 HTTPS_TRIGGER_URL=$(gcloud alpha functions describe sentimenter-submitter \
     --format='value(httpsTrigger.url)')
 curl "${HTTPS_TRIGGER_URL}?term=serverless"
@@ -21,7 +22,7 @@ curl "${HTTPS_TRIGGER_URL}?term=serverless"
 
 Returns
 
-```
+```json
 {
   "id": "d50ff5b2-2120-4587-a99e-c4aea5c3f592",
   "created_on": "2018-08-16T14:52:20.195459344Z",
@@ -31,16 +32,16 @@ Returns
 }
 ```
 
-## Job Processing (Background)
+### Job Processing (Background)
 
 The `processor` function will be automatically triggered by GCF when a new job arrives on Pub/Sub topic. The processor will change the state of that `job` to `Processing`, retrieve last `100` tweets using Twitter API, and score each tweet's sentiment using Google's Natural Language API. When done, the score of that job will be saved in the Spanner DB and the job status updated to `Processed`.
 
 
-## Job Status
+### Job Status
 
 Throughout the entire process, the user can invoke the `status` function over HTTPS and get the current state of the submitted job. If the job status is `Processed`, the status of the job will also include its score.
 
-```
+```shell
 HTTPS_TRIGGER_URL=$(gcloud alpha functions describe sentimenter-status \
     --format='value(httpsTrigger.url)')
 curl "${HTTPS_TRIGGER_URL}?id=c24774a1-89df-4ec0-a962-121a36d6966c"
@@ -48,7 +49,7 @@ curl "${HTTPS_TRIGGER_URL}?id=c24774a1-89df-4ec0-a962-121a36d6966c"
 
 Result
 
-```
+```json
 {
   "id": "6c211819-30ef-4bdb-a723-a5be4979c101",
   "created_on": "2018-08-16T14:54:02.822679302Z",
@@ -65,3 +66,131 @@ Result
 ```
 
 > None of the Cloud Functions in this example know about each other. They only interaction point between the, is the state persisted in the Spanner DB and the payloads on the Pub/Sub queue
+
+
+## Setup
+
+### PubSub Topic
+
+```shell
+gcloud beta pubsub topics create "sentimenter"
+```
+
+Returns
+
+```shell
+Created topic [projects/s9-demo/topics/sentimenter]
+```
+
+### Spanner DB
+
+First create a **Spanner instance**
+
+```shell
+gcloud beta spanner instances create "sentimenter" \
+  --config=regional-us-central1 \
+  --description="Sentimenter DB" \
+  --nodes=1
+```
+
+Returns
+
+```shell
+Creating instance...done.
+```
+
+Than create the **database** in the previously created Spanner instance
+
+```shell
+gcloud spanner databases create "db" --instance="sentimenter"
+```
+
+Returns
+
+```shell
+Creating database...done.
+```
+
+Finally create the two tables to support the `sentimenter` solution
+
+```shell
+gcloud spanner databases ddl update "db" --instance="sentimenter" \
+    --ddl='CREATE TABLE jobs (id STRING(MAX), search_term STRING(MAX), created_on TIMESTAMP, status STRING(MAX)) PRIMARY KEY (id)'
+
+gcloud spanner databases ddl update "db" --instance="sentimenter" \
+    --ddl='CREATE TABLE results (id STRING(MAX), processed_on TIMESTAMP, tweets INT64, positive INT64, negative INT64, score FLOAT64) PRIMARY KEY (id)'
+```
+
+Returns
+
+```shell
+Updating database... done.
+```
+
+### Functions
+
+First define the necessary envirnment variables
+
+```shell
+ENV_VARS="TOPIC_NAME=sentimenter"
+ENV_VARS="${ENV_VARS},DB_PATH=projects/s9-demo/instances/sentimenter/databases/db"
+ENV_VARS="${ENV_VARS},T_CONSUMER_KEY=${T_CONSUMER_KEY},T_CONSUMER_SECRET=${T_CONSUMER_SECRET}"
+ENV_VARS="${ENV_VARS},T_ACCESS_TOKEN=${T_ACCESS_TOKEN},T_ACCESS_SECRET=${T_ACCESS_SECRET}"
+```
+
+> Note, I'm obfuscating the Twitter API variables by pulling them form my local variables.
+> You can just type these keys here if you need to. See [this instructions](https://developer.twitter.com/en/docs/basics/authentication/guides/access-tokens.html)
+> on how to create Twitter API credentials see
+
+Then deploy the three functions using the GCP `gcloud` command.
+
+```shell
+gcloud alpha functions deploy sentimenter-submitter \
+  --entry-point SubmitFunction \
+  --set-env-vars $ENV_VARS \
+  --memory 128MB \
+  --region us-central1 \
+  --runtime go111 \
+  --trigger-http
+
+gcloud alpha functions deploy sentimenter-status \
+  --entry-point StatusFunction \
+  --set-env-vars $ENV_VARS \
+  --memory 128MB \
+  --region us-central1 \
+  --runtime go111 \
+  --trigger-http
+
+gcloud alpha functions deploy sentimenter-processor \
+  --entry-point ProcessorFunction \
+  --set-env-vars $PROCESS_ENV_VARS \
+  --memory 256MB \
+  --region us-central1 \
+  --runtime go111 \
+  --trigger-topic=sentimenter \
+  --timeout=540s
+```
+
+If everything goes well, you should see this kind of response to every one of these above functions
+
+```shell
+Deploying function (may take a while - up to 2 minutes)...done.
+availableMemoryMb: 128
+entryPoint: StatusFunction
+environmentVariables:
+  DB_PATH: projects/s9-demo/instances/sentimenter/databases/db
+  TOPIC_NAME: sentimenter
+httpsTrigger:
+  url: https://us-central1-s9-demo.cloudfunctions.net/sentimenter-status
+labels:
+  deployment-tool: cli-gcloud
+name: projects/s9-demo/locations/us-central1/functions/sentimenter-status
+runtime: go111
+serviceAccountEmail: s9-demo@appspot.gserviceaccount.com
+sourceUploadUrl: ...
+status: ACTIVE
+timeout: 60s
+updateTime: '2018-08-16T00:38:33Z'
+versionId: '4'
+```
+

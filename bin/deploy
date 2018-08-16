@@ -1,8 +1,10 @@
 #!/bin/bash
 
-ENV_VARS="TOPIC_NAME=sentimenter,DB_PATH=projects/s9-demo/instances/sentimenter/databases/db"
-PROCESS_ENV_VARS="${ENV_VARS},T_CONSUMER_KEY=${T_CONSUMER_KEY},T_CONSUMER_SECRET=${T_CONSUMER_SECRET}"
-PROCESS_ENV_VARS="${PROCESS_ENV_VARS},T_ACCESS_TOKEN=${T_ACCESS_TOKEN},T_ACCESS_SECRET=${T_ACCESS_SECRET}"
+ENV_VARS="TOPIC_NAME=sentimenter"
+ENV_VARS="${ENV_VARS},DB_PATH=projects/s9-demo/instances/sentimenter/databases/db"
+ENV_VARS="${ENV_VARS},T_CONSUMER_KEY=${T_CONSUMER_KEY},T_CONSUMER_SECRET=${T_CONSUMER_SECRET}"
+ENV_VARS="${ENV_VARS},T_ACCESS_TOKEN=${T_ACCESS_TOKEN},T_ACCESS_SECRET=${T_ACCESS_SECRET}"
+
 
 
 gcloud alpha functions deploy sentimenter-submitter \
@@ -12,7 +14,6 @@ gcloud alpha functions deploy sentimenter-submitter \
   --region us-central1 \
   --runtime go111 \
   --trigger-http
-
 
 gcloud alpha functions deploy sentimenter-status \
   --entry-point StatusFunction \

@@ -2,13 +2,10 @@ package sentimenter
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"sync"
-
-	uuid "github.com/satori/go.uuid"
 
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/spanner"
@@ -90,16 +87,4 @@ func getDefaultConfig() error {
 
 	return nil
 
-}
-
-func getNewID() string {
-	return uuid.NewV4().String()
-}
-
-func serializeOrFail(o interface{}) []byte {
-	b, err := json.Marshal(o)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return b
 }
