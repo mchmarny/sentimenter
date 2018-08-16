@@ -13,7 +13,12 @@ func TestProcessorFunction(t *testing.T) {
 		t.Errorf("Error on config: %v", config.err)
 	}
 
-	job := newRequest("google")
+	job := newRequest("amazon")
+	err := saveJob(job)
+	if err != nil {
+		t.Errorf("Error saving job: %v", err)
+		return
+	}
 
 	jobJSON := serializeOrFail(job)
 
@@ -24,11 +29,10 @@ func TestProcessorFunction(t *testing.T) {
 	}
 
 	maxTweets = 1
-
-	err := ProcessorFunction(ctx, msg)
-
+	err = ProcessorFunction(ctx, msg)
 	if err != nil {
 		t.Errorf("Error processing job: %v", err)
+		return
 	}
 
 }

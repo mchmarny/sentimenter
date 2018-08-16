@@ -15,19 +15,19 @@ The `submitter` function which the user can invoke over HTTPS with their search 
 
 ```
 HTTPS_TRIGGER_URL=$(gcloud alpha functions describe sentimenter-submitter \
-  --format='value(httpsTrigger.url)')
-curl https://$(HTTPS_TRIGGER_URL}/sentimenter-submitter?term=google
+    --format='value(httpsTrigger.url)')
+curl "${HTTPS_TRIGGER_URL}?term=serverless"
 ```
 
-Result
+Returns
 
 ```
 {
-    "id": "c24774a1-89df-4ec0-a962-121a36d6966c",
-    "created_on": "2018-08-15T21:19:06.869021913Z",
-    "search_term": "google",
-    "status": "Received",
-    "result": null
+  "id": "d50ff5b2-2120-4587-a99e-c4aea5c3f592",
+  "created_on": "2018-08-16T14:52:20.195459344Z",
+  "search_term": "serverless",
+  "status": "Received",
+  "result": null
 }
 ```
 
@@ -42,25 +42,25 @@ Throughout the entire process, the user can invoke the `status` function over HT
 
 ```
 HTTPS_TRIGGER_URL=$(gcloud alpha functions describe sentimenter-status \
-  --format='value(httpsTrigger.url)')
-curl https://$(HTTPS_TRIGGER_URL}/sentimenter-status?id=c24774a1-89df-4ec0-a962-121a36d6966c
+    --format='value(httpsTrigger.url)')
+curl "${HTTPS_TRIGGER_URL}?id=c24774a1-89df-4ec0-a962-121a36d6966c"
 ```
 
 Result
 
 ```
 {
-    "id": "c24774a1-89df-4ec0-a962-121a36d6966c",
-    "created_on": "2018-08-15T21:19:06.869021913Z",
-    "search_term": "google",
-    "status": "Processed",
-    "result": {
-        "processed_on": "2018-08-15T21:19:06.869021913Z",
-        "tweets": 100,
-        "positive": 34,
-        "negative": 4,
-        "score": 23.91
-    }
+  "id": "6c211819-30ef-4bdb-a723-a5be4979c101",
+  "created_on": "2018-08-16T14:54:02.822679302Z",
+  "search_term": "serverless",
+  "status": "Processed",
+  "result": {
+    "processed_on": "2018-08-16T14:54:06.636848268Z",
+    "tweets": 100,
+    "positive": 9,
+    "negative": 0,
+    "score": 13.880000105127692
+  }
 }
 ```
 

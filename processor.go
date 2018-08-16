@@ -59,12 +59,12 @@ func ProcessorFunction(ctx context.Context, m PubSubMessage) error {
 	err = updateJobStatus(job.ID, jobStatusProcessing)
 	if err != nil {
 		log.Printf("Error updating job status: %v", err)
-		updateJobStatus(job.ID, jobStatusFailed)
+		return err
 	}
 
 	sent, err := processTerm(job.Term)
 	if err != nil {
-		log.Println(err)
+		log.Printf("Error updating job status: %v", err)
 		updateJobStatus(job.ID, jobStatusFailed)
 		return err
 	}
@@ -154,7 +154,7 @@ func processTerm(query string) (r *SentimentResult, err error) {
 
 	// results
 	result := &SentimentResult{
-		Tweets:    len(search.Statuses),
+		Tweets:    int64(len(search.Statuses)),
 		Processed: time.Now(),
 	}
 

@@ -35,9 +35,9 @@ type SentimentRequest struct {
 
 type SentimentResult struct {
 	Processed time.Time `json:"processed_on"`
-	Tweets    int       `json:"tweets"`
-	Positive  int       `json:"positive"`
-	Negative  int       `json:"negative"`
+	Tweets    int64     `json:"tweets"`
+	Positive  int64     `json:"positive"`
+	Negative  int64     `json:"negative"`
 	Score     float64   `json:"score"`
 }
 
