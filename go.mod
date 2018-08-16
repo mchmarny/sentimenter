@@ -8,9 +8,11 @@ require (
 	github.com/dghubble/go-twitter v0.0.0-20180729205000-9b315f8b2c97
 	github.com/dghubble/oauth1 v0.4.0
 	github.com/dghubble/sling v1.1.0 // indirect
+	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/golang/protobuf v1.1.0 // indirect
 	github.com/google/go-cmp v0.2.0 // indirect
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135 // indirect
+	github.com/google/martian v2.0.0-beta.2+incompatible // indirect
 	github.com/googleapis/gax-go v2.0.0+incompatible // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
