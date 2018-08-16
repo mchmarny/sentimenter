@@ -12,7 +12,7 @@ The `sentimenter` solutions allows the user to query for public sentiment from t
 
 ## Usage
 
-### Term Submission
+### 1. Term Submission
 
 The `submitter` function which the user can invoke over HTTPS with their search `term` will create a `job`, save it with `Received` state in Spanner DB, and queue that job for processing in Pub/Sub topic.
 
@@ -34,12 +34,12 @@ Returns
 }
 ```
 
-### Job Processing (Background)
+### 2. Job Processing (Background)
 
 The `processor` function will be automatically triggered by GCF when a new job arrives on Pub/Sub topic. The processor will change the state of that `job` to `Processing`, retrieve tweets using Twitter API, and score each tweet's sentiment using Google's Natural Language API. When done, the score of that job will be saved in the Spanner DB and the job status will be updated to `Processed`.
 
 
-### Job Status
+### 3. Job Status
 
 Throughout the entire process, the user can invoke the `status` function over HTTPS and get the current state of the submitted job. If the job status is `Processed`, the status of the job will also include its score.
 
