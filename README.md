@@ -4,7 +4,8 @@ Example of multi-step process leveraging GCF and multiple back-end services:
 
 * [Cloud Spanner](https://cloud.google.com/spanner/) - horizontally scalable, strongly consistent, relational database service
 * [Pub/Sub](https://cloud.google.com/pubsub/) - Ingest event streams at any scale from anywhere for real-time streaming
-* [Google Cloud Natural Language API](https://cloud.google.com/natural-language/) - Derive insights from unstructured text using Google ML
+* [Cloud Natural Language API](https://cloud.google.com/natural-language/) - Derive insights from unstructured text using Google ML
+* [Stackdriver](https://cloud.google.com/stackdriver/) - Monitoring and management for services, containers, applications, and infrastructure
 
 The `sentimenter` solutions allows the user to query for public sentiment from the last `100` tweets for any submitted term.
 
