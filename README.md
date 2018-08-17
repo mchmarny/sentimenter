@@ -58,6 +58,7 @@ Result
   "created_on": "2018-08-16T14:54:02.822679302Z",
   "search_term": "serverless",
   "status": "Processed",
+  "status_url": "https://us-central1-s9-demo.cloudfunctions.net/sentimenter-status?id=6c211819-30ef-4bdb-a723-a5be4979c101",
   "result": {
     "processed_on": "2018-08-16T14:54:06.636848268Z",
     "tweets": 100,
