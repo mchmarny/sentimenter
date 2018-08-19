@@ -30,11 +30,13 @@ var (
 var configFunc = getDefaultConfig
 
 type configuration struct {
-	topic  *pubsub.Topic
-	client *pubsub.Client
-	db     *spanner.Client
-	once   sync.Once
-	err    error
+	topic     *pubsub.Topic
+	client    *pubsub.Client
+	db        *spanner.Client
+	once      sync.Once
+	err       error
+	region    string
+	projectID string
 }
 
 func (c *configuration) Error() error {
@@ -58,6 +60,7 @@ func getDefaultConfig() error {
 		config.err = &envError{"GCP_PROJECT"}
 		return config.err
 	}
+	config.projectID = projectID
 
 	loggingClient, err := logging.NewClient(ctx, projectID)
 	if err != nil {
@@ -66,6 +69,13 @@ func getDefaultConfig() error {
 	}
 
 	logger = loggingClient.Logger("sentimenter")
+
+	region := os.Getenv("FUNCTION_REGION")
+	if region == "" {
+		// hack for testing
+		region = "us-central1"
+	}
+	config.region = region
 
 	topicName := os.Getenv("TOPIC_NAME")
 	if topicName == "" {

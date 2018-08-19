@@ -121,7 +121,7 @@ func pubSubPayloadToJob(m *PubSubMessage) (job *SentimentRequest, err error) {
 		return nil, err
 	}
 
-	return j, nil
+	return j.setStatus(), nil
 
 }
 

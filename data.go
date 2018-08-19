@@ -103,7 +103,7 @@ func getJob(id string) (req *SentimentRequest, err error) {
 
 	err = row.Columns(&result.ID, &result.Term, &result.On, &result.Status)
 
-	return result, err
+	return result.setStatus(), err
 
 }
 

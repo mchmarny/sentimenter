@@ -1,7 +1,13 @@
 package sentimenter
 
 import (
+	"fmt"
 	"time"
+)
+
+const (
+	//https://us-central1-s9-demo.cloudfunctions.net/sentimenter-status?id=c83eb7ff-a27b-4eb9-bd7c-70232bb5421d
+	statusURLFormat = "https://%s-%s.cloudfunctions.net/sentimenter-status?id=%s"
 )
 
 // RequestStatus represents the sentiment request job status
@@ -16,12 +22,18 @@ const (
 )
 
 func newRequest(term string) *SentimentRequest {
-	return &SentimentRequest{
+	r := &SentimentRequest{
 		ID:     getNewID(),
 		On:     time.Now(),
 		Term:   term,
 		Status: jobStatusReceived,
 	}
+	return r.setStatus()
+}
+
+func (r *SentimentRequest) setStatus() *SentimentRequest {
+	r.URL = fmt.Sprintf(statusURLFormat, config.region, config.projectID, r.ID)
+	return r
 }
 
 // SentimentRequest represents the sentiment request job
@@ -30,6 +42,7 @@ type SentimentRequest struct {
 	On     time.Time        `json:"created_on"`
 	Term   string           `json:"search_term"`
 	Status string           `json:"status"`
+	URL    string           `json:"status_url"`
 	Result *SentimentResult `json:"result"`
 }
 
