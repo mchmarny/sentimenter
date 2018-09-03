@@ -148,7 +148,8 @@ ENV_VARS="${ENV_VARS},T_ACCESS_TOKEN=${T_ACCESS_TOKEN},T_ACCESS_SECRET=${T_ACCES
 > You can just type these keys here if you need to. See [this instructions](https://developer.twitter.com/en/docs/basics/authentication/guides/access-tokens.html)
 > on how to create Twitter API credentials see
 
-Then deploy the three functions using the GCP `gcloud` command.
+Then deploy the three functions using the GCP `gcloud` command, specifying the entry point as well as environment variables and few other parameters for each. 
+
 
 ```shell
 gcloud alpha functions deploy sentimenter-submitter \
