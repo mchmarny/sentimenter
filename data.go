@@ -2,133 +2,57 @@ package sentimenter
 
 import (
 	"errors"
-	"log"
-
-	"cloud.google.com/go/spanner"
+	"fmt"
 )
 
-func saveJob(req *SentimentRequest) error {
+func saveJob(job *SentimentRequest) error {
 
-	if config.db == nil {
-		log.Fatal("DB not configured in saveJobs")
+	if config.client == nil {
+		return errors.New("Client not configured in saveJobs")
 	}
 
-	if req == nil {
+	if job == nil {
 		return errors.New("Nil parameter")
 	}
 
-	m := spanner.InsertOrUpdate("jobs",
-		[]string{"id", "search_term", "created_on", "status"},
-		[]interface{}{req.ID, req.Term, req.On, req.Status})
+	if job.ID == "" {
+		return errors.New("Nil job ID")
+	}
 
-	_, err := config.db.Apply(ctx, []*spanner.Mutation{m})
-
+	_, err := config.client.Collection(jobsCollectionName).Doc(job.ID).Set(ctx, job)
 	if err != nil {
-		log.Fatalf("Error on job save: %v", err)
+		return fmt.Errorf("Error on job save: %v", err)
 	}
 
-	log.Printf("Saved Job:%s Term:%s ", req.ID, req.Term)
-
-	return err
-
-}
-
-func saveResults(req *SentimentRequest) error {
-
-	if config.db == nil {
-		log.Fatal("DB not configured in saveJobs")
-	}
-
-	if req == nil {
-		return errors.New("Nil parameter")
-	}
-
-	m := spanner.InsertOrUpdate("results",
-		[]string{"id", "processed_on", "tweets", "positive", "negative", "score"},
-		[]interface{}{req.ID, req.Result.Processed, req.Result.Tweets,
-			req.Result.Positive, req.Result.Negative, req.Result.Score})
-
-	_, err := config.db.Apply(ctx, []*spanner.Mutation{m})
-
-	if err != nil {
-		log.Fatalf("Error on result write: %v", err)
-	}
-
-	log.Printf("Saved Job Result:%s Score:%v", req.ID, req.Result.Score)
-
-	return err
-
-}
-
-func updateJobStatus(id, status string) error {
-
-	if config.db == nil {
-		log.Fatal("DB not configured in saveJobs")
-	}
-
-	m := spanner.InsertOrUpdate("jobs",
-		[]string{"id", "status"},
-		[]interface{}{id, status})
-
-	_, err := config.db.Apply(ctx, []*spanner.Mutation{m})
-
-	if err != nil {
-		log.Fatalf("Error on DB update: %v", err)
-	}
-
-	log.Printf("Updated Job:%s Status:%s ", id, status)
-
-	return err
+	return nil
 
 }
 
 func getJob(id string) (req *SentimentRequest, err error) {
 
-	if config.db == nil {
-		log.Fatal("DB not configured")
+	if config.client == nil {
+		return nil, errors.New("Client not configured in getJob")
 	}
 
 	if id == "" {
-		return nil, errors.New("Nil parameter")
+		return nil, errors.New("Nil job ID parameter")
 	}
 
-	var result = &SentimentRequest{}
-	row, err := config.db.Single().ReadRow(ctx, "jobs",
-		spanner.Key{id}, []string{"id", "search_term", "created_on", "status"})
-
+	d, err := config.client.Collection(jobsCollectionName).Doc(id).Get(ctx)
 	if err != nil {
-		log.Println(err)
-		return result, err
+		return nil, err
 	}
 
-	err = row.Columns(&result.ID, &result.Term, &result.On, &result.Status)
-
-	return result.setStatus(), err
-
-}
-
-func getResult(id string) (r *SentimentResult, err error) {
-
-	if config.db == nil {
-		log.Fatal("DB not configured")
+	if d == nil {
+		return nil, fmt.Errorf("No doc for ID: %s", id)
 	}
 
-	if id == "" {
-		return nil, errors.New("Nil parameter")
+	c := newRequest("")
+
+	if e := d.DataTo(&c); err != nil {
+		return nil, fmt.Errorf("Error converting doc to job: %v", e)
 	}
 
-	var result = &SentimentResult{}
-	row, err := config.db.Single().ReadRow(ctx, "results", spanner.Key{id},
-		[]string{"processed_on", "tweets", "positive", "negative", "score"})
-
-	if err != nil {
-		log.Println(err)
-		return result, err
-	}
-
-	err = row.Columns(&result.Processed, &result.Tweets,
-		&result.Positive, &result.Negative, &result.Score)
-
-	return result, err
+	return c, nil
 
 }

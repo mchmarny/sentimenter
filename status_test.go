@@ -9,6 +9,10 @@ import (
 
 func TestStatusFunction(t *testing.T) {
 
+	if testing.Short() {
+		t.Skip("Skipping TestStatusFunction")
+	}
+
 	// Save a DB
 	configFunc()
 	if config.err != nil {

@@ -39,23 +39,12 @@ func StatusFunction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// save request
+	// handle job not found for this ID
 	if job.ID == "" {
 		log.Printf("Job not found: %s", id)
 		logger.StandardLogger(logging.Error).Printf("Job not found, ID: %s", id)
 		http.Error(w, "Job not found", http.StatusInternalServerError)
 		return
-	}
-
-	if job.Status == jobStatusProcessed {
-		rez, err := getResult(job.ID)
-		if err != nil {
-			log.Println(err)
-			logger.StandardLogger(logging.Error).Println(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		job.Result = rez
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -41,14 +41,6 @@ func SubmitFunction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// publish job
-	if err := publishJob(ctx, serializeOrFail(job)); err != nil {
-		log.Println(err)
-		logger.StandardLogger(logging.Error).Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(serializeOrFail(job))
 

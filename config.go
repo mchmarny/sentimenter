@@ -7,10 +7,13 @@ import (
 	"os"
 	"sync"
 
-	"cloud.google.com/go/pubsub"
-	"cloud.google.com/go/spanner"
+	"cloud.google.com/go/firestore"
 
 	"cloud.google.com/go/logging"
+)
+
+const (
+	jobsCollectionName = "jobs"
 )
 
 func init() {
@@ -30,9 +33,7 @@ var (
 var configFunc = getDefaultConfig
 
 type configuration struct {
-	topic     *pubsub.Topic
-	client    *pubsub.Client
-	db        *spanner.Client
+	client    *firestore.Client
 	once      sync.Once
 	err       error
 	region    string
@@ -77,34 +78,13 @@ func getDefaultConfig() error {
 	}
 	config.region = region
 
-	topicName := os.Getenv("TOPIC_NAME")
-	if topicName == "" {
-		config.err = &envError{"TOPIC_NAME"}
-		return config.err
-	}
-
-	dbPath := os.Getenv("DB_PATH")
-	if dbPath == "" {
-		config.err = &envError{"DB_PATH"}
-		return config.err
-	}
-
-	client, err := pubsub.NewClient(ctx, projectID)
+	// define client
+	c, err := firestore.NewClient(ctx, projectID)
 	if err != nil {
-		config.err = err
-		return config.err
+		log.Fatalf("Cannot create client: %v", err)
 	}
 
-	config.client = client
-	config.topic = client.Topic(topicName)
-
-	db, err := spanner.NewClient(ctx, dbPath)
-	if err != nil {
-		config.err = err
-		return config.err
-	}
-
-	config.db = db
+	config.client = c
 
 	return nil
 

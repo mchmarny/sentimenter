@@ -8,6 +8,10 @@ import (
 
 func TestSubmitFunction(t *testing.T) {
 
+	if testing.Short() {
+		t.Skip("Skipping TestSubmitFunction")
+	}
+
 	req, err := http.NewRequest("GET", "/?term=test", nil)
 	if err != nil {
 		t.Fatal(err)

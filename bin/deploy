@@ -1,15 +1,13 @@
 #!/bin/bash
 
-ENV_VARS="TOPIC_NAME=sentimenter"
-ENV_VARS="${ENV_VARS},DB_PATH=projects/s9-demo/instances/sentimenter/databases/db"
-ENV_VARS="${ENV_VARS},T_CONSUMER_KEY=${T_CONSUMER_KEY},T_CONSUMER_SECRET=${T_CONSUMER_SECRET}"
-ENV_VARS="${ENV_VARS},T_ACCESS_TOKEN=${T_ACCESS_TOKEN},T_ACCESS_SECRET=${T_ACCESS_SECRET}"
+FS_COLL_NAME="projects/s9-demo/databases/(default)/documents/jobs/{id}"
+
+T_VARS="T_CONSUMER_KEY=${T_CONSUMER_KEY},T_CONSUMER_SECRET=${T_CONSUMER_SECRET}"
+T_VARS="${T_VARS},T_ACCESS_TOKEN=${T_ACCESS_TOKEN},T_ACCESS_SECRET=${T_ACCESS_SECRET}"
 
 
-
-gcloud alpha functions deploy sentimenter-submitter \
+gcloud alpha functions deploy sentimenter-submit \
   --entry-point SubmitFunction \
-  --set-env-vars $ENV_VARS \
   --memory 128MB \
   --region us-central1 \
   --runtime go111 \
@@ -17,17 +15,17 @@ gcloud alpha functions deploy sentimenter-submitter \
 
 gcloud alpha functions deploy sentimenter-status \
   --entry-point StatusFunction \
-  --set-env-vars $ENV_VARS \
   --memory 128MB \
   --region us-central1 \
   --runtime go111 \
   --trigger-http
 
-gcloud alpha functions deploy sentimenter-processor \
+gcloud alpha functions deploy sentimenter-process \
   --entry-point ProcessorFunction \
-  --set-env-vars $PROCESS_ENV_VARS \
+  --set-env-vars $T_VARS \
   --memory 256MB \
   --region us-central1 \
   --runtime go111 \
-  --trigger-topic=sentimenter \
+  --trigger-event providers/cloud.firestore/eventTypes/document.create \
+  --trigger-resource $FS_COLL_NAME \
   --timeout=540s

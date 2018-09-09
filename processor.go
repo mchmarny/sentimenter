@@ -2,16 +2,16 @@ package sentimenter
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"strings"
 	"time"
 
-	lang "cloud.google.com/go/language/apiv1"
 	"cloud.google.com/go/logging"
+
+	lang "cloud.google.com/go/language/apiv1"
 	"github.com/dghubble/go-twitter/twitter"
 	"github.com/dghubble/oauth1"
 
@@ -30,7 +30,7 @@ var (
 )
 
 // ProcessorFunction processes pubsub messages
-func ProcessorFunction(ctx context.Context, m PubSubMessage) error {
+func ProcessorFunction(ctx context.Context, e FirestoreEvent) error {
 
 	config.once.Do(func() {
 		configFunc()
@@ -52,76 +52,108 @@ func ProcessorFunction(ctx context.Context, m PubSubMessage) error {
 		return config.Error()
 	}
 
-	job, err := pubSubPayloadToJob(&m)
+	logger.StandardLogger(logging.Info).Printf("Parsing Job: %v", e.Value.Fields)
 
+	// data to map to struc
+	m := e.Value.Fields.(map[string]interface{})
+	job, err := eventMapToJob(m)
 	if err != nil {
-		log.Println(err)
-		return err
+		logger.StandardLogger(logging.Error).Printf("Error parsing job: %v - %v", err, job)
+		return fmt.Errorf("Error parsing job: %v - %v", err, job)
 	}
 
+	// processing job
 	log.Printf("Processing job: %s", job.ID)
 	logger.StandardLogger(logging.Info).Printf("Processing job: %s", job.ID)
-	err = updateJobStatus(job.ID, jobStatusProcessing)
+	err = updateStatusAndSaveJob(job, jobStatusProcessing)
 	if err != nil {
-		log.Printf("Error updating job status: %v", err)
-		logger.StandardLogger(logging.Error).Println(err)
 		return err
 	}
 
+	// process term
+	log.Printf("Processing term: %s", job.Term)
+	logger.StandardLogger(logging.Info).Printf("Processing term: %s", job.Term)
 	sent, err := processTerm(job.Term)
 	if err != nil {
-		log.Printf("Error updating job status: %v", err)
-		logger.StandardLogger(logging.Error).Println(err)
-		updateJobStatus(job.ID, jobStatusFailed)
+		updateStatusAndSaveJob(job, jobStatusFailed)
 		return err
 	}
 
 	// update job
 	job.Result = sent
-
-	// save results
-	err = saveResults(job)
+	job.Status = jobStatusProcessed
+	log.Printf("Saving results: %v", job)
+	logger.StandardLogger(logging.Info).Printf("Saving results: %v", job)
+	err = saveJob(job)
 	if err != nil {
-		log.Println(err)
-		logger.StandardLogger(logging.Error).Println(err)
-		updateJobStatus(job.ID, jobStatusFailed)
+		// best effort only, no error capture on purpose
+		updateStatusAndSaveJob(job, jobStatusFailed)
 		return err
 	}
 
-	// save job status
-	err = updateJobStatus(job.ID, jobStatusProcessed)
-	if err != nil {
-		log.Println(err)
-		logger.StandardLogger(logging.Error).Println(err)
-		return err
-	}
+	log.Printf("Job processed: %s", job.ID)
+	logger.StandardLogger(logging.Info).Printf("Job processed: %s", job.ID)
 
 	return nil
 
 }
 
-func pubSubPayloadToJob(m *PubSubMessage) (job *SentimentRequest, err error) {
-
-	if m == nil {
-		log.Println("Nil PubSubMessage")
-		return nil, errors.New("PubSubMessage required")
+func updateStatusAndSaveJob(job *SentimentRequest, status string) error {
+	job.Status = status
+	log.Printf("Changing job status: %s (%s)", job.ID, job.Status)
+	logger.StandardLogger(logging.Info).Printf("Changing job status: %s (%s)", job.ID, job.Status)
+	err := saveJob(job)
+	if err != nil {
+		log.Println(err)
+		job.Status = jobStatusFailed
+		logger.StandardLogger(logging.Error).Println(err)
+		saveJob(job)
+		return err
 	}
 
-	d, err := base64.StdEncoding.DecodeString(m.Data)
-	if err != nil {
-		log.Printf("Decoding error: %v", err)
-		return nil, err
+	return nil
+}
+
+// TODO: This has be easier, map is of proto serialized struc not json
+func eventMapToJob(m map[string]interface{}) (job *SentimentRequest, err error) {
+
+	if m == nil {
+		log.Println("Nil FirestoreEvent")
+		return nil, errors.New("FirestoreEvent required")
 	}
 
 	j := &SentimentRequest{}
-
-	err = json.Unmarshal([]byte(d), &j)
+	id, e := getMapValAsString(m, "id")
 	if err != nil {
-		log.Printf("Error deserislizing: %v", err)
-		return nil, err
+		return nil, e
 	}
+	j.ID = id
 
-	return j.setStatus(), nil
+	term, e := getMapValAsString(m, "search_term")
+	if err != nil {
+		return nil, e
+	}
+	j.Term = term
+
+	status, e := getMapValAsString(m, "status")
+	if err != nil {
+		return nil, e
+	}
+	j.Status = status
+
+	url, e := getMapValAsString(m, "status_url")
+	if err != nil {
+		return nil, e
+	}
+	j.URL = url
+
+	on, err := getMapValAsTimestamp(m, "created_on")
+	if err != nil {
+		return nil, e
+	}
+	j.On = on
+
+	return j, nil
 
 }
 

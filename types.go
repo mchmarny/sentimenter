@@ -38,23 +38,30 @@ func (r *SentimentRequest) setStatus() *SentimentRequest {
 
 // SentimentRequest represents the sentiment request job
 type SentimentRequest struct {
-	ID     string           `json:"id"`
-	On     time.Time        `json:"created_on"`
-	Term   string           `json:"search_term"`
-	Status string           `json:"status"`
-	URL    string           `json:"status_url"`
-	Result *SentimentResult `json:"result"`
+	ID     string           `json:"id" firestore:"id"`
+	On     time.Time        `json:"created_on" firestore:"created_on"`
+	Term   string           `json:"search_term" firestore:"search_term"`
+	Status string           `json:"status" firestore:"status"`
+	URL    string           `json:"status_url" firestore:"status_url"`
+	Result *SentimentResult `json:"result" firestore:"result"`
 }
 
+// SentimentResult represents results of the job
 type SentimentResult struct {
-	Processed time.Time `json:"processed_on"`
-	Tweets    int64     `json:"tweets"`
-	Positive  int64     `json:"positive"`
-	Negative  int64     `json:"negative"`
-	Score     float64   `json:"score"`
+	Processed time.Time `json:"processed_on" firestore:"processed_on"`
+	Tweets    int64     `json:"tweets" firestore:"tweets"`
+	Positive  int64     `json:"positive" firestore:"positive"`
+	Negative  int64     `json:"negative" firestore:"negative"`
+	Score     float64   `json:"score" firestore:"score"`
 }
 
-// PubSubMessage represents PubSub payload
-type PubSubMessage struct {
-	Data string `json:"data"`
+// FirestoreValue is the payload of a FirestoreEvent event
+type FirestoreValue struct {
+	Fields interface{} `json:"fields"`
+}
+
+// FirestoreEvent is the Firestore document payload
+type FirestoreEvent struct {
+	OldValue FirestoreValue `json:"oldValue"`
+	Value    FirestoreValue `json:"value"`
 }
