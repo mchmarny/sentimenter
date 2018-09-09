@@ -11,8 +11,6 @@ Example of multi-step process leveraging GCF and multiple back-end services:
 
 The `sentimenter` solutions allows the user to query for public sentiment from the last `100` tweets for any submitted term.
 
-![overview](img/overview.png)
-
 ## Usage
 
 ### 1. Term Submission
