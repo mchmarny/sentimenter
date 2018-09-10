@@ -15,7 +15,7 @@ func StatusFunction(w http.ResponseWriter, r *http.Request) {
 
 	id := r.URL.Query().Get("id")
 	if id == "" {
-		logStringAll("Nil job ID query parameter")
+		errLogger.Println("Nil job ID query parameter")
 		http.Error(w, "Job `ID` parameter is required", http.StatusInternalServerError)
 		return
 	}
@@ -24,14 +24,14 @@ func StatusFunction(w http.ResponseWriter, r *http.Request) {
 	job, err := getJob(id)
 
 	if err != nil {
-		logErrorAll(err)
+		errLogger.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// handle job not found for this ID
 	if job.ID == "" {
-		logAll("Job not found: %s", id)
+		errLogger.Printf("Job not found: %s", id)
 		http.Error(w, "Job not found", http.StatusInternalServerError)
 		return
 	}

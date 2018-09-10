@@ -14,7 +14,6 @@ func TestStatusFunction(t *testing.T) {
 	}
 
 	configInitializer()
-	skipRemoteLogging = true
 
 	job := newRequest("test")
 	err := saveJob(job)

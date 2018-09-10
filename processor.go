@@ -3,7 +3,6 @@ package sentimenter
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -41,24 +40,25 @@ func ProcessorFunction(ctx context.Context, e FirestoreEvent) error {
 
 	defer logger.Flush()
 
-	logAll("Parsing Job: %v", e.Value.Fields)
+	infoLogger.Printf("Parsing Job: %v", e.Value.Fields)
 
 	// data to map to struc
 	m := e.Value.Fields.(map[string]interface{})
 	job, err := eventMapToJob(m)
 	if err != nil {
-		return logErrorAll(fmt.Errorf("Error parsing job: %v - %v", err, job))
+		errLogger.Printf("Error parsing job: %v - %v", err, job)
+		return errors.New("Error processing job")
 	}
 
 	// processing job
-	logAll("Processing job: %s", job.ID)
+	infoLogger.Printf("Processing job: %s", job.ID)
 	err = updateStatusAndSaveJob(job, jobStatusProcessing)
 	if err != nil {
 		return err
 	}
 
 	// process term
-	logAll("Processing term: %s", job.Term)
+	infoLogger.Printf("Processing term: %s", job.Term)
 	sent, err := processTerm(job.Term)
 	if err != nil {
 		updateStatusAndSaveJob(job, jobStatusFailed)
@@ -68,7 +68,7 @@ func ProcessorFunction(ctx context.Context, e FirestoreEvent) error {
 	// update job
 	job.Result = sent
 	job.Status = jobStatusProcessed
-	logAll("Saving results: %v", job)
+	infoLogger.Printf("Saving results: %v", job)
 	err = saveJob(job)
 	if err != nil {
 		// best effort only, no error capture on purpose
@@ -76,7 +76,7 @@ func ProcessorFunction(ctx context.Context, e FirestoreEvent) error {
 		return err
 	}
 
-	logAll("Job processed: %s", job.ID)
+	infoLogger.Printf("Job processed: %s", job.ID)
 
 	return nil
 
@@ -84,10 +84,10 @@ func ProcessorFunction(ctx context.Context, e FirestoreEvent) error {
 
 func updateStatusAndSaveJob(job *SentimentRequest, status string) error {
 	job.Status = status
-	logAll("Changing job status: %s (%s)", job.ID, job.Status)
+	infoLogger.Printf("Changing job status: %s (%s)", job.ID, job.Status)
 	err := saveJob(job)
 	if err != nil {
-		logErrorAll(err)
+		errLogger.Println(err)
 		job.Status = jobStatusFailed
 		saveJob(job)
 		return err
@@ -168,7 +168,7 @@ func processTerm(query string) (r *SentimentResult, err error) {
 		ResultType: "recent",
 	}
 
-	logAll("Search: %v", query)
+	infoLogger.Printf("Search: %v", query)
 	search, _, err := client.Search.Tweets(searchArgs)
 	if err != nil {
 		return nil, err
@@ -180,23 +180,17 @@ func processTerm(query string) (r *SentimentResult, err error) {
 		Processed: time.Now(),
 	}
 
-	logAll("Found: %d", result.Tweets)
+	infoLogger.Printf("Found: %d", result.Tweets)
 	for _, tweet := range search.Statuses {
 
-		logAll("ID:%v", tweet.ID)
-
 		txt := strings.TrimSuffix(tweet.Text, "\n")
-		logAll("Text:%s", txt)
 
 		sentiment, err := scoreSentiment(txt)
 
 		if err != nil {
-			logAll("Error while scoring: %v", err)
+			errLogger.Printf("Error while scoring: %v", err)
 			return nil, err
 		}
-
-		//.Score, result.DocumentSentiment.Magnitude, nil
-		logAll("Sentiment: %v", sentiment)
 
 		if sentiment.Score < negativeScoreThreshold && sentiment.Magnitude > magnitudeThreshold {
 			result.Negative++
@@ -232,7 +226,7 @@ func scoreSentiment(s string) (sentiment *langpb.Sentiment, err error) {
 		EncodingType: langpb.EncodingType_UTF8,
 	})
 	if err != nil {
-		logAll("Error while scoring: %v", err)
+		errLogger.Printf("Error while scoring: %v", err)
 		return nil, err
 	}
 

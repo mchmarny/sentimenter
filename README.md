@@ -155,6 +155,6 @@ The resons for this is that Firestore IDs can't start with a number. To avoid th
 
 ## TODO
 
-* refactor config to its own package
-* sort out duplicate logging
+* (WIP) sort out duplicate logging
+*  Add local logging
 *

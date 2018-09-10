@@ -48,7 +48,6 @@ func TestProcessorFunction(t *testing.T) {
 	}
 
 	configInitializer()
-	skipRemoteLogging = true
 
 	m := getTestJobMap()
 

@@ -2,7 +2,6 @@ package sentimenter
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"sync"
@@ -20,7 +19,8 @@ const (
 var (
 	ctx               context.Context
 	logger            *logging.Logger
-	skipRemoteLogging bool
+	infoLogger        *log.Logger
+	errLogger         *log.Logger
 	db                *firestore.Client
 	once              sync.Once
 	region            string
@@ -28,26 +28,6 @@ var (
 	configValid       bool
 	configInitializer = defaultConfigInitializer
 )
-
-func logAll(v string, args ...interface{}) {
-	logStringAll(fmt.Sprintf(v, args...))
-}
-
-func logStringAll(v string) {
-	log.Println(v)
-	if logger == nil || !skipRemoteLogging {
-		logger.StandardLogger(logging.Info).Printf(v)
-	}
-}
-
-func logErrorAll(err error) error {
-	log.Println(err)
-	if logger == nil || !skipRemoteLogging {
-		logger.StandardLogger(logging.Error).Println(err)
-	}
-
-	return err
-}
 
 func defaultConfigInitializer() {
 
@@ -75,6 +55,8 @@ func defaultConfigInitializer() {
 		log.Fatalf("Error while configuring logger: %v", err)
 	}
 	logger = logClient.Logger(processName)
+	infoLogger = logger.StandardLogger(logging.Info)
+	errLogger = logger.StandardLogger(logging.Error)
 
 	// on the end
 	configValid = true

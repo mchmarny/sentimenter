@@ -11,7 +11,6 @@ func TestJobData(t *testing.T) {
 	}
 
 	configInitializer()
-	skipRemoteLogging = true
 
 	termReq := newRequest("test")
 
