@@ -24,6 +24,8 @@ func getTestJobMap() map[string]interface{} {
 
 func TestConversions(t *testing.T) {
 
+	// no config needed here
+
 	m := getTestJobMap()
 
 	job, err := eventMapToJob(m)
@@ -45,11 +47,8 @@ func TestProcessorFunction(t *testing.T) {
 		t.Skip("Skipping TestProcessorFunction")
 	}
 
-	// Save a DB
-	configFunc()
-	if config.err != nil {
-		t.Errorf("Error on config: %v", config.err)
-	}
+	configInitializer()
+	skipRemoteLogging = true
 
 	m := getTestJobMap()
 

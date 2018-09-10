@@ -10,11 +10,8 @@ func TestJobData(t *testing.T) {
 		t.Skip("Skipping TestJobData")
 	}
 
-	configFunc()
-
-	if config.err != nil {
-		t.Errorf("Error on config: %v", config.err)
-	}
+	configInitializer()
+	skipRemoteLogging = true
 
 	termReq := newRequest("test")
 

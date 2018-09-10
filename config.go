@@ -13,79 +13,70 @@ import (
 )
 
 const (
-	jobsCollectionName = "jobs"
+	defaultJobsCollectionName = "jobs"
+	processName               = "sentimenter"
 )
 
-func init() {
-	config = &configuration{}
-	if config.Error() != nil {
-		log.Printf("Error on init: %v", config.err)
+var (
+	ctx               context.Context
+	logger            *logging.Logger
+	skipRemoteLogging bool
+	db                *firestore.Client
+	once              sync.Once
+	region            string
+	projectID         string
+	configValid       bool
+	configInitializer = defaultConfigInitializer
+)
+
+func logAll(v string, args ...interface{}) {
+	logStringAll(fmt.Sprintf(v, args...))
+}
+
+func logStringAll(v string) {
+	log.Println(v)
+	if logger == nil || !skipRemoteLogging {
+		logger.StandardLogger(logging.Info).Printf(v)
 	}
 }
 
-var (
-	config *configuration
-	ctx    context.Context
-	logger *logging.Logger
-)
+func logErrorAll(err error) error {
+	log.Println(err)
+	if logger == nil || !skipRemoteLogging {
+		logger.StandardLogger(logging.Error).Println(err)
+	}
 
-// configFunc sets the global configuration; it's overridden in tests.
-var configFunc = getDefaultConfig
-
-type configuration struct {
-	client    *firestore.Client
-	once      sync.Once
-	err       error
-	region    string
-	projectID string
+	return err
 }
 
-func (c *configuration) Error() error {
-	return c.err
-}
-
-type envError struct {
-	name string
-}
-
-func (e *envError) Error() string {
-	return fmt.Sprintf("%s environment variable unset or missing", e.name)
-}
-
-func getDefaultConfig() error {
+func defaultConfigInitializer() {
 
 	ctx = context.Background()
 
-	projectID := os.Getenv("GCP_PROJECT")
+	projectID = os.Getenv("GCP_PROJECT")
 	if projectID == "" {
-		config.err = &envError{"GCP_PROJECT"}
-		return config.err
-	}
-	config.projectID = projectID
-
-	loggingClient, err := logging.NewClient(ctx, projectID)
-	if err != nil {
-		config.err = err
-		return config.err
+		log.Fatalln("GCP_PROJECT environment variable not set")
 	}
 
-	logger = loggingClient.Logger("sentimenter")
-
-	region := os.Getenv("FUNCTION_REGION")
+	region = os.Getenv("FUNCTION_REGION")
 	if region == "" {
-		// hack for testing
+		log.Printf("FUNCTION_REGION not set, using default: us-central1")
 		region = "us-central1"
 	}
-	config.region = region
 
-	// define client
-	c, err := firestore.NewClient(ctx, projectID)
+	dbClient, err := firestore.NewClient(ctx, projectID)
 	if err != nil {
-		log.Fatalf("Cannot create client: %v", err)
+		log.Fatalf("Error while creating Firestore client: %v", err)
 	}
+	db = dbClient
 
-	config.client = c
+	logClient, err := logging.NewClient(ctx, projectID)
+	if err != nil {
+		log.Fatalf("Error while configuring logger: %v", err)
+	}
+	logger = logClient.Logger(processName)
 
-	return nil
+	// on the end
+	configValid = true
 
 }

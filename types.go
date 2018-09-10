@@ -32,7 +32,7 @@ func newRequest(term string) *SentimentRequest {
 }
 
 func (r *SentimentRequest) setStatus() *SentimentRequest {
-	r.URL = fmt.Sprintf(statusURLFormat, config.region, config.projectID, r.ID)
+	r.URL = fmt.Sprintf(statusURLFormat, region, projectID, r.ID)
 	return r
 }
 

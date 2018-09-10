@@ -13,11 +13,8 @@ func TestStatusFunction(t *testing.T) {
 		t.Skip("Skipping TestStatusFunction")
 	}
 
-	// Save a DB
-	configFunc()
-	if config.err != nil {
-		t.Errorf("Error on config: %v", config.err)
-	}
+	configInitializer()
+	skipRemoteLogging = true
 
 	job := newRequest("test")
 	err := saveJob(job)

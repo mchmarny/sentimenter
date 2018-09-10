@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"cloud.google.com/go/logging"
-
 	lang "cloud.google.com/go/language/apiv1"
 	"github.com/dghubble/go-twitter/twitter"
 	"github.com/dghubble/oauth1"
@@ -32,47 +30,35 @@ var (
 // ProcessorFunction processes pubsub messages
 func ProcessorFunction(ctx context.Context, e FirestoreEvent) error {
 
-	config.once.Do(func() {
-		configFunc()
-
+	once.Do(func() {
+		configInitializer()
 		client, err := lang.NewClient(ctx)
 		if err != nil {
-			log.Printf("Failed to create client: %v", err)
-			config.err = err
+			log.Fatalf("Failed to create lang client: %v", err)
 		}
 		langClient = client
-
 	})
 
 	defer logger.Flush()
 
-	if config.Error() != nil {
-		log.Println(config.Error())
-		logger.StandardLogger(logging.Error).Println(config.Error())
-		return config.Error()
-	}
-
-	logger.StandardLogger(logging.Info).Printf("Parsing Job: %v", e.Value.Fields)
+	logAll("Parsing Job: %v", e.Value.Fields)
 
 	// data to map to struc
 	m := e.Value.Fields.(map[string]interface{})
 	job, err := eventMapToJob(m)
 	if err != nil {
-		logger.StandardLogger(logging.Error).Printf("Error parsing job: %v - %v", err, job)
-		return fmt.Errorf("Error parsing job: %v - %v", err, job)
+		return logErrorAll(fmt.Errorf("Error parsing job: %v - %v", err, job))
 	}
 
 	// processing job
-	log.Printf("Processing job: %s", job.ID)
-	logger.StandardLogger(logging.Info).Printf("Processing job: %s", job.ID)
+	logAll("Processing job: %s", job.ID)
 	err = updateStatusAndSaveJob(job, jobStatusProcessing)
 	if err != nil {
 		return err
 	}
 
 	// process term
-	log.Printf("Processing term: %s", job.Term)
-	logger.StandardLogger(logging.Info).Printf("Processing term: %s", job.Term)
+	logAll("Processing term: %s", job.Term)
 	sent, err := processTerm(job.Term)
 	if err != nil {
 		updateStatusAndSaveJob(job, jobStatusFailed)
@@ -82,8 +68,7 @@ func ProcessorFunction(ctx context.Context, e FirestoreEvent) error {
 	// update job
 	job.Result = sent
 	job.Status = jobStatusProcessed
-	log.Printf("Saving results: %v", job)
-	logger.StandardLogger(logging.Info).Printf("Saving results: %v", job)
+	logAll("Saving results: %v", job)
 	err = saveJob(job)
 	if err != nil {
 		// best effort only, no error capture on purpose
@@ -91,8 +76,7 @@ func ProcessorFunction(ctx context.Context, e FirestoreEvent) error {
 		return err
 	}
 
-	log.Printf("Job processed: %s", job.ID)
-	logger.StandardLogger(logging.Info).Printf("Job processed: %s", job.ID)
+	logAll("Job processed: %s", job.ID)
 
 	return nil
 
@@ -100,13 +84,11 @@ func ProcessorFunction(ctx context.Context, e FirestoreEvent) error {
 
 func updateStatusAndSaveJob(job *SentimentRequest, status string) error {
 	job.Status = status
-	log.Printf("Changing job status: %s (%s)", job.ID, job.Status)
-	logger.StandardLogger(logging.Info).Printf("Changing job status: %s (%s)", job.ID, job.Status)
+	logAll("Changing job status: %s (%s)", job.ID, job.Status)
 	err := saveJob(job)
 	if err != nil {
-		log.Println(err)
+		logErrorAll(err)
 		job.Status = jobStatusFailed
-		logger.StandardLogger(logging.Error).Println(err)
 		saveJob(job)
 		return err
 	}
@@ -118,8 +100,7 @@ func updateStatusAndSaveJob(job *SentimentRequest, status string) error {
 func eventMapToJob(m map[string]interface{}) (job *SentimentRequest, err error) {
 
 	if m == nil {
-		log.Println("Nil FirestoreEvent")
-		return nil, errors.New("FirestoreEvent required")
+		return nil, errors.New("Event data required")
 	}
 
 	j := &SentimentRequest{}
@@ -187,7 +168,7 @@ func processTerm(query string) (r *SentimentResult, err error) {
 		ResultType: "recent",
 	}
 
-	log.Printf("Search: %v\n", query)
+	logAll("Search: %v", query)
 	search, _, err := client.Search.Tweets(searchArgs)
 	if err != nil {
 		return nil, err
@@ -199,24 +180,23 @@ func processTerm(query string) (r *SentimentResult, err error) {
 		Processed: time.Now(),
 	}
 
-	log.Printf("Found: %d", result.Tweets)
-
+	logAll("Found: %d", result.Tweets)
 	for _, tweet := range search.Statuses {
 
-		log.Printf("ID:%v", tweet.ID)
+		logAll("ID:%v", tweet.ID)
 
 		txt := strings.TrimSuffix(tweet.Text, "\n")
-		log.Printf("Text:%s", txt)
+		logAll("Text:%s", txt)
 
 		sentiment, err := scoreSentiment(txt)
 
 		if err != nil {
-			log.Printf("Error while scoring: %v", err)
+			logAll("Error while scoring: %v", err)
 			return nil, err
 		}
 
 		//.Score, result.DocumentSentiment.Magnitude, nil
-		log.Printf("Sentiment: %v", sentiment)
+		logAll("Sentiment: %v", sentiment)
 
 		if sentiment.Score < negativeScoreThreshold && sentiment.Magnitude > magnitudeThreshold {
 			result.Negative++
@@ -252,7 +232,7 @@ func scoreSentiment(s string) (sentiment *langpb.Sentiment, err error) {
 		EncodingType: langpb.EncodingType_UTF8,
 	})
 	if err != nil {
-		log.Printf("Error while scoring: %v", err)
+		logAll("Error while scoring: %v", err)
 		return nil, err
 	}
 

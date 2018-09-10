@@ -26,6 +26,4 @@ func TestSubmitFunction(t *testing.T) {
 		t.Errorf("wrong status code: got %v want %v", status, http.StatusOK)
 	}
 
-	//TODO: Add test for counter incrementing
-
 }

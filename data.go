@@ -7,8 +7,8 @@ import (
 
 func saveJob(job *SentimentRequest) error {
 
-	if config.client == nil {
-		return errors.New("Client not configured in saveJobs")
+	if !configValid {
+		return errors.New("Invalid configuration in saveJobs")
 	}
 
 	if job == nil {
@@ -19,7 +19,7 @@ func saveJob(job *SentimentRequest) error {
 		return errors.New("Nil job ID")
 	}
 
-	_, err := config.client.Collection(jobsCollectionName).Doc(job.ID).Set(ctx, job)
+	_, err := db.Collection(defaultJobsCollectionName).Doc(job.ID).Set(ctx, job)
 	if err != nil {
 		return fmt.Errorf("Error on job save: %v", err)
 	}
@@ -30,15 +30,15 @@ func saveJob(job *SentimentRequest) error {
 
 func getJob(id string) (req *SentimentRequest, err error) {
 
-	if config.client == nil {
-		return nil, errors.New("Client not configured in getJob")
+	if !configValid {
+		return nil, errors.New("Invalid configuration in saveJobs")
 	}
 
 	if id == "" {
 		return nil, errors.New("Nil job ID parameter")
 	}
 
-	d, err := config.client.Collection(jobsCollectionName).Doc(id).Get(ctx)
+	d, err := db.Collection(defaultJobsCollectionName).Doc(id).Get(ctx)
 	if err != nil {
 		return nil, err
 	}

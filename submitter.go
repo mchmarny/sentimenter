@@ -1,7 +1,6 @@
 package sentimenter
 
 import (
-	"log"
 	"net/http"
 
 	"cloud.google.com/go/logging"
@@ -10,21 +9,15 @@ import (
 // SubmitFunction represents the request submit functionality
 func SubmitFunction(w http.ResponseWriter, r *http.Request) {
 
-	config.once.Do(func() { configFunc() })
+	once.Do(func() {
+		configInitializer()
+	})
 
 	defer logger.Flush()
 
-	if config.Error() != nil {
-		log.Println(config.Error())
-		logger.StandardLogger(logging.Error).Println(config.Error())
-		http.Error(w, config.Error().Error(), http.StatusInternalServerError)
-		return
-	}
-
 	term := r.URL.Query().Get("term")
 	if term == "" {
-		log.Println("Nil term")
-		logger.StandardLogger(logging.Error).Println("Term parameter required")
+		logStringAll("Nil term query parameter")
 		http.Error(w, "The 'term' parameter is required", http.StatusInternalServerError)
 		return
 	}
@@ -35,8 +28,7 @@ func SubmitFunction(w http.ResponseWriter, r *http.Request) {
 
 	// save request
 	if err := saveJob(job); err != nil {
-		log.Println(err)
-		logger.StandardLogger(logging.Error).Println(err)
+		logErrorAll(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
