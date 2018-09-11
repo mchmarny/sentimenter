@@ -2,16 +2,26 @@ package sentimenter
 
 import (
 	"net/http"
+
+	"cloud.google.com/go/logging"
 )
 
 // StatusFunction represents the job status checker functionality
 func StatusFunction(w http.ResponseWriter, r *http.Request) {
 
 	once.Do(func() {
-		configInitializer()
+		configInitializer("status")
 	})
 
 	defer logger.Flush()
+
+	logger.Log(logging.Entry{
+		HTTPRequest: &logging.HTTPRequest{
+			Request: r,
+		},
+		Payload:  "StatusFunction invoked",
+		Severity: logging.Info,
+	})
 
 	id := r.URL.Query().Get("id")
 	if id == "" {

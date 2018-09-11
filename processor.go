@@ -30,7 +30,7 @@ var (
 func ProcessorFunction(ctx context.Context, e FirestoreEvent) error {
 
 	once.Do(func() {
-		configInitializer()
+		configInitializer("process")
 		client, err := lang.NewClient(ctx)
 		if err != nil {
 			log.Fatalf("Failed to create lang client: %v", err)

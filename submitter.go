@@ -2,16 +2,26 @@ package sentimenter
 
 import (
 	"net/http"
+
+	"cloud.google.com/go/logging"
 )
 
 // SubmitFunction represents the request submit functionality
 func SubmitFunction(w http.ResponseWriter, r *http.Request) {
 
 	once.Do(func() {
-		configInitializer()
+		configInitializer("submit")
 	})
 
 	defer logger.Flush()
+
+	logger.Log(logging.Entry{
+		HTTPRequest: &logging.HTTPRequest{
+			Request: r,
+		},
+		Payload:  "SubmitFunction invoked",
+		Severity: logging.Info,
+	})
 
 	term := r.URL.Query().Get("term")
 	if term == "" {

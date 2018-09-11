@@ -13,7 +13,7 @@ func TestStatusFunction(t *testing.T) {
 		t.Skip("Skipping TestStatusFunction")
 	}
 
-	configInitializer()
+	configInitializer("test-status")
 
 	job := newRequest("test")
 	err := saveJob(job)

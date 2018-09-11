@@ -9,6 +9,8 @@ import (
 	"cloud.google.com/go/firestore"
 
 	"cloud.google.com/go/logging"
+
+	"google.golang.org/genproto/googleapis/api/monitoredres"
 )
 
 const (
@@ -29,7 +31,7 @@ var (
 	configInitializer = defaultConfigInitializer
 )
 
-func defaultConfigInitializer() {
+func defaultConfigInitializer(fn string) {
 
 	ctx = context.Background()
 
@@ -54,7 +56,17 @@ func defaultConfigInitializer() {
 	if err != nil {
 		log.Fatalf("Error while configuring logger: %v", err)
 	}
-	logger = logClient.Logger(processName)
+
+	// logging
+	monitoredResource := monitoredres.MonitoredResource{
+		Type: "cloud_function",
+		Labels: map[string]string{
+			"function_name": fn,
+			"region":        region,
+		},
+	}
+	commonResource := logging.CommonResource(&monitoredResource)
+	logger = logClient.Logger(processName, commonResource)
 	infoLogger = logger.StandardLogger(logging.Info)
 	errLogger = logger.StandardLogger(logging.Error)
 

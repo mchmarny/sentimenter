@@ -10,7 +10,7 @@ func TestJobData(t *testing.T) {
 		t.Skip("Skipping TestJobData")
 	}
 
-	configInitializer()
+	configInitializer("test-data")
 
 	termReq := newRequest("test")
 

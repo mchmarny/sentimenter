@@ -47,7 +47,7 @@ func TestProcessorFunction(t *testing.T) {
 		t.Skip("Skipping TestProcessorFunction")
 	}
 
-	configInitializer()
+	configInitializer("test-process")
 
 	m := getTestJobMap()
 
