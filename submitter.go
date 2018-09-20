@@ -41,7 +41,10 @@ func SubmitFunction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Access-Control-Allow-Origin", "*") //TODO: domain
+	w.Header().Set("Access-Control-Allow-Methods", "GET")
 	w.Header().Set("Content-Type", "application/json")
+
 	w.Write(serializeOrFail(job))
 
 }
