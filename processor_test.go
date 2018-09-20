@@ -11,7 +11,7 @@ func getTestJobMap() map[string]interface{} {
 		"created_on":{"timestampValue":"2018-09-09T15:02:48.198087Z"},
 		"id":{"stringValue":"tid-123"},
 		"result":{"nullValue":null},
-		"search_term":{"stringValue":"test"},
+		"search_term":{"stringValue":"google"},
 		"status":{"stringValue":"Received"},
 		"status_url":{"stringValue":"https://test.com"}
 	}`)
@@ -34,7 +34,7 @@ func TestConversions(t *testing.T) {
 		return
 	}
 
-	if job.ID != "tid-123" || job.Term != "test" || job.Status != "Received" || job.URL != "https://test.com" {
+	if job.ID != "tid-123" || job.Term != "google" || job.Status != "Received" || job.URL != "https://test.com" {
 		t.Errorf("Parsed job in an invalid state: %v", job)
 		return
 	}

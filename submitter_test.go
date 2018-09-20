@@ -12,7 +12,7 @@ func TestSubmitFunction(t *testing.T) {
 		t.Skip("Skipping TestSubmitFunction")
 	}
 
-	req, err := http.NewRequest("GET", "/?term=test", nil)
+	req, err := http.NewRequest("GET", "/?term=google", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -189,7 +189,7 @@ func processTerm(query string) (r *SentimentResult, err error) {
 
 		if err != nil {
 			errLogger.Printf("Error while scoring: %v", err)
-			return nil, err
+			return result, nil
 		}
 
 		if sentiment.Score < negativeScoreThreshold && sentiment.Magnitude > magnitudeThreshold {
