@@ -1,15 +1,14 @@
 # sentimenter
 
+The `sentimenter` app allows the user to query for public sentiment from recent tweets for specific topic.
+
 Example of multi-step process leveraging GCF and multiple back-end services:
 
-
-* [Firestore](https://cloud.google.com/firestore/) - to store cloud-native app data at global scale.
-* [Natural Language API](https://cloud.google.com/natural-language/) - to derive insights from unstructured text using Google ML
-* [Stackdriver](https://cloud.google.com/stackdriver/) - To monitor and manage services, containers, apps, and infrastructure
+* [Firestore](https://cloud.google.com/firestore/) - To store app data in a Cloud-native way at global scale
+* [Natural Language API](https://cloud.google.com/natural-language/) - ML API to derive insights from unstructured text
+* [Stackdriver](https://cloud.google.com/stackdriver/) - To monitor app, services, and functions as well as the underlining infrastructure
 
 > To experiment with the new go 1.11 support in Google Cloud Functions sign up for the [private alpha](https://goo.gl/forms/rwRxKsajWXmdwwPt1)
-
-The `sentimenter` solutions allows the user to query for public sentiment from the last `100` tweets for any submitted term.
 
 ## Usage
 
