@@ -10,6 +10,8 @@ Example of multi-step process leveraging GCF and multiple back-end services:
 
 > To experiment with the new go 1.11 support in Google Cloud Functions sign up for the [private alpha](https://goo.gl/forms/rwRxKsajWXmdwwPt1)
 
+> For UI project that uses sentimenter see https://github.com/mchmarny/sentimenter-ui
+
 ## Usage
 
 ### 1. Term Submission
@@ -20,7 +22,7 @@ The `submit` function which the user can invoke over HTTPS with their search `te
 HTTPS_TRIGGER_URL=$(gcloud alpha functions describe sentimenter-submit \
     --format='value(httpsTrigger.url)')
 curl "${HTTPS_TRIGGER_URL}?term=serverless"
-```
+``` 
 
 Returns
 
