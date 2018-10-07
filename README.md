@@ -144,14 +144,13 @@ versionId: '4'
 
 ## Cost 
 
-Cloud Firestore, Natural Language API, and GCF all comes with a generous free tier. In most cases, you should be able to support ~10000 daily sentimenter users before accruing any charged. 
+Cloud Firestore, Natural Language API, and GCF all comes with a generous free tier. In most cases, you should be able to support ~150 daily sentimenter users before accruing any charged. 
+
+5K of monthly Natural Language API invocations are also free. There is a daily quota limit too so do check the pricing information at https://cloud.google.com/natural-language/pricing. 
 
 Cloud Firestore is charged per number of reads, writes, and deletes. 50K of reads and 20K of writes and deletes daily are free, as well as the first 1GB of data storage. For more details on Cloud Firestore see https://firebase.google.com/docs/firestore/pricing. 
 
-5K of monthly Natural Language API invocations are also free. More information at https://cloud.google.com/natural-language/pricing. 
-
 Lastly, first 2M of monthly GCF invocations are also free. More information at https://cloud.google.com/functions/pricing
-
 
 ## Learnings
 
