@@ -1,26 +1,38 @@
 #!/bin/bash
 
-FS_COLL_NAME="projects/s9-demo/databases/(default)/documents/jobs/{id}"
+FS_COLL_NAME="projects/${PROJECT_ID}/databases/(default)/documents/jobs/{id}"
 
 T_VARS="T_CONSUMER_KEY=${T_CONSUMER_KEY},T_CONSUMER_SECRET=${T_CONSUMER_SECRET}"
 T_VARS="${T_VARS},T_ACCESS_TOKEN=${T_ACCESS_TOKEN},T_ACCESS_SECRET=${T_ACCESS_SECRET}"
 
 
-gcloud alpha functions deploy sentimenter-submit \
+gcloud beta functions deploy sentimenter-submit \
   --entry-point SubmitFunction \
   --memory 128MB \
   --region us-central1 \
   --runtime go111 \
-  --trigger-http
+  --trigger-http \
+  --allow-unauthenticated
 
-gcloud alpha functions deploy sentimenter-status \
+gcloud alpha functions add-iam-policy-binding sentimenter-submit \
+  --region=us-central1 \
+  --member=allUsers \
+  --role=roles/cloudfunctions.invoker
+
+gcloud beta functions deploy sentimenter-status \
   --entry-point StatusFunction \
   --memory 128MB \
   --region us-central1 \
   --runtime go111 \
-  --trigger-http
+  --trigger-http \
+  --allow-unauthenticated
 
-gcloud alpha functions deploy sentimenter-process \
+gcloud alpha functions add-iam-policy-binding sentimenter-status \
+  --region=us-central1 \
+  --member=allUsers \
+  --role=roles/cloudfunctions.invoker
+
+gcloud beta functions deploy sentimenter-process \
   --entry-point ProcessorFunction \
   --set-env-vars $T_VARS \
   --memory 256MB \
@@ -28,4 +40,5 @@ gcloud alpha functions deploy sentimenter-process \
   --runtime go111 \
   --trigger-event providers/cloud.firestore/eventTypes/document.create \
   --trigger-resource $FS_COLL_NAME \
-  --timeout=540s
+  --timeout=540s \
+  --allow-unauthenticated
